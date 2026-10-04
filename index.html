@@ -576,47 +576,6 @@ input:checked ~ #toggle-dot {
                     </div>
                 </div>
 
-                <!-- Section 2: Locations -->
-                <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800">
-                    <h3 class="text-lg font-medium text-cyan-400 mb-4"><i class="fa-solid fa-map-location-dot mr-2"></i> The Distance Bridge</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="space-y-4">
-                            <h4 class="text-sm font-semibold text-gray-300 border-b border-gray-800 pb-2">Origin (Where you are)</h4>
-                            <div>
-                                <label class="block text-xs text-gray-400 mb-1">City Name</label>
-                                <input type="text" id="cfg-origin-city" class="w-full bg-gray-950 border border-gray-700 rounded p-2 text-sm focus:border-cyan-500 focus:outline-none">
-                            </div>
-                            <div class="flex gap-4">
-                                <div class="flex-1">
-                                    <label class="block text-xs text-gray-400 mb-1">Latitude</label>
-                                    <input type="number" step="any" id="cfg-origin-lat" class="w-full bg-gray-950 border border-gray-700 rounded p-2 text-sm focus:border-cyan-500 focus:outline-none">
-                                </div>
-                                <div class="flex-1">
-                                    <label class="block text-xs text-gray-400 mb-1">Longitude</label>
-                                    <input type="number" step="any" id="cfg-origin-lon" class="w-full bg-gray-950 border border-gray-700 rounded p-2 text-sm focus:border-cyan-500 focus:outline-none">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="space-y-4">
-                            <h4 class="text-sm font-semibold text-gray-300 border-b border-gray-800 pb-2">Destination (Where she is)</h4>
-                            <div>
-                                <label class="block text-xs text-gray-400 mb-1">City Name</label>
-                                <input type="text" id="cfg-dest-city" class="w-full bg-gray-950 border border-gray-700 rounded p-2 text-sm focus:border-cyan-500 focus:outline-none">
-                            </div>
-                            <div class="flex gap-4">
-                                <div class="flex-1">
-                                    <label class="block text-xs text-gray-400 mb-1">Latitude</label>
-                                    <input type="number" step="any" id="cfg-dest-lat" class="w-full bg-gray-950 border border-gray-700 rounded p-2 text-sm focus:border-cyan-500 focus:outline-none">
-                                </div>
-                                <div class="flex-1">
-                                    <label class="block text-xs text-gray-400 mb-1">Longitude</label>
-                                    <input type="number" step="any" id="cfg-dest-lon" class="w-full bg-gray-950 border border-gray-700 rounded p-2 text-sm focus:border-cyan-500 focus:outline-none">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Section 3: The Reveal & Carousel -->
                 <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800">
                     <h3 class="text-lg font-medium text-cyan-400 mb-4"><i class="fa-solid fa-gift mr-2"></i> Photos & Reveal</h3>
@@ -624,17 +583,20 @@ input:checked ~ #toggle-dot {
                         <div>
                             <label class="block text-sm text-gray-400 mb-2">Final Reveal Photo (Single)</label>
                             <div class="border-2 border-dashed border-gray-700 rounded-xl p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer relative" id="photo-upload-zone">
-                                <input type="file" id="cfg-photo-input" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                                <div id="photo-preview-container" class="hidden flex-col items-center">
+                                <input type="file" id="cfg-photo-input" accept="image/*" class="hidden">
+                                <div id="photo-preview-container" class="hidden flex-col items-center pointer-events-none">
                                     <img id="photo-preview" src="" class="h-24 w-24 object-cover rounded-lg mb-2 border border-gray-600">
-                                    <span class="text-xs text-cyan-400">Click to change</span>
+                                    <span class="text-xs text-cyan-400">Click to change (Requires Passcode)</span>
                                 </div>
-                                <div id="photo-placeholder" class="flex flex-col items-center">
-                                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-500 mb-2"></i>
-                                    <span class="text-sm text-gray-400">Drag & Drop Reveal Photo</span>
+                                <div id="photo-placeholder" class="flex flex-col items-center pointer-events-none">
+                                    <i class="fa-solid fa-lock text-3xl text-gray-500 mb-2"></i>
+                                    <span class="text-sm text-gray-400">Click to Upload (Requires Passcode)</span>
                                 </div>
                             </div>
                             <input type="hidden" id="cfg-photo-base64">
+                            <div id="photo-remove-container" class="hidden mt-2 text-right">
+                                <button id="btn-remove-reveal" type="button" class="text-xs text-red-500 hover:text-red-400 bg-red-950/30 px-2 py-1 rounded"><i class="fa-solid fa-trash-can mr-1"></i>Remove Final Photo</button>
+                            </div>
                             
                             <!-- NEW CAROUSEL PHOTOS -->
                             <div class="mt-6 border-t border-gray-800 pt-4">
@@ -717,6 +679,7 @@ let countdownInterval;
 let currentStage = 1;
 let targetDate; 
 let isDbInitialized = false;
+let pendingCarouselBase64s = [];
 
 // Audio
 const chimeAudio = document.getElementById('chime-audio');
@@ -866,12 +829,6 @@ function populateAdminForm() {
     document.getElementById('cfg-age').value = config.age;
     document.getElementById('cfg-date').value = config.date;
     document.getElementById('cfg-time').value = config.time;
-    document.getElementById('cfg-origin-city').value = config.originCity;
-    document.getElementById('cfg-origin-lat').value = config.originLat;
-    document.getElementById('cfg-origin-lon').value = config.originLon;
-    document.getElementById('cfg-dest-city').value = config.destCity;
-    document.getElementById('cfg-dest-lat').value = config.destLat;
-    document.getElementById('cfg-dest-lon').value = config.destLon;
     document.getElementById('cfg-note').value = config.note;
     
     // Toggle switch logic
@@ -885,20 +842,42 @@ function populateAdminForm() {
         document.getElementById('photo-preview-container').classList.add('flex');
         document.getElementById('photo-placeholder').classList.add('hidden');
         document.getElementById('cfg-photo-base64').value = config.photoBase64;
+        const removeBtn = document.getElementById('photo-remove-container');
+        if (removeBtn) removeBtn.classList.remove('hidden');
+    } else {
+        const removeBtn = document.getElementById('photo-remove-container');
+        if (removeBtn) removeBtn.classList.add('hidden');
     }
     
-    if (config.carouselPhotos && config.carouselPhotos.length > 0) {
-        const previewContainer = document.getElementById('carousel-preview-container');
-        if (previewContainer) {
-            previewContainer.innerHTML = '';
-            config.carouselPhotos.forEach(base64 => {
-                const img = document.createElement('img');
-                img.src = base64;
-                img.className = "h-12 w-12 object-cover rounded border border-gray-600";
-                previewContainer.appendChild(img);
-            });
-        }
-    }
+    pendingCarouselBase64s = config.carouselPhotos ? [...config.carouselPhotos] : [];
+    renderCarouselPreviews();
+}
+
+function renderCarouselPreviews() {
+    const container = document.getElementById('carousel-preview-container');
+    if(!container) return;
+    container.innerHTML = '';
+    pendingCarouselBase64s.forEach((base64, index) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'relative inline-block shrink-0';
+        
+        const img = document.createElement('img');
+        img.src = base64;
+        img.className = 'h-12 w-12 object-cover rounded border border-gray-600';
+        
+        const btn = document.createElement('button');
+        btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        btn.className = 'absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] hover:bg-red-500 shadow-md cursor-pointer z-20';
+        btn.onclick = (e) => {
+            e.preventDefault();
+            pendingCarouselBase64s.splice(index, 1);
+            renderCarouselPreviews();
+        };
+        
+        wrapper.appendChild(img);
+        wrapper.appendChild(btn);
+        container.appendChild(wrapper);
+    });
 }
 
 document.getElementById('cfg-preview').addEventListener('change', (e) => {
@@ -922,6 +901,20 @@ function updateToggleVisual(isChecked) {
     }
 }
 
+document.getElementById('photo-upload-zone').addEventListener('click', (e) => {
+    e.preventDefault();
+    const pass = prompt('Enter passcode to upload or change the reveal photo:');
+    if (pass === '225454') {
+        document.getElementById('cfg-photo-input').click();
+    } else if (pass !== null) {
+        alert('Incorrect passcode.');
+    }
+});
+
+document.getElementById('cfg-photo-input').addEventListener('click', (e) => {
+    e.stopPropagation();
+});
+
 // Photo Upload Logic (Single Reveal Photo)
 document.getElementById('cfg-photo-input').addEventListener('change', function(e) {
     const file = e.target.files[0];
@@ -933,34 +926,45 @@ document.getElementById('cfg-photo-input').addEventListener('change', function(e
         document.getElementById('photo-preview-container').classList.add('flex');
         document.getElementById('photo-placeholder').classList.add('hidden');
         document.getElementById('cfg-photo-base64').value = base64;
+        const removeBtn = document.getElementById('photo-remove-container');
+        if (removeBtn) removeBtn.classList.remove('hidden');
     });
 });
 
-// Carousel Bulk Photo Upload Logic
-let pendingCarouselBase64s = [];
+const removeRevealBtn = document.getElementById('btn-remove-reveal');
+if (removeRevealBtn) {
+    removeRevealBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const pass = prompt("Enter passcode to remove the final reveal photo:");
+        if (pass === "225454") {
+            document.getElementById('cfg-photo-base64').value = "";
+            document.getElementById('photo-preview-container').classList.add('hidden');
+            document.getElementById('photo-preview-container').classList.remove('flex');
+            document.getElementById('photo-placeholder').classList.remove('hidden');
+            document.getElementById('photo-remove-container').classList.add('hidden');
+            document.getElementById('photo-preview').src = "";
+            config.photoBase64 = ""; 
+            alert("Photo removed. Please click 'Save Configuration' at the bottom to apply changes.");
+        } else if (pass !== null) {
+            alert("Incorrect passcode.");
+        }
+    });
+}
 
+// Carousel Bulk Photo Upload Logic
 document.getElementById('cfg-carousel-input').addEventListener('change', async function(e) {
-    const files = Array.from(e.target.files).slice(0, 26); // Max 26
-    pendingCarouselBase64s = [];
+    const files = Array.from(e.target.files);
     const previewContainer = document.getElementById('carousel-preview-container');
-    previewContainer.innerHTML = '<span class="text-xs text-cyan-400">Processing...</span>';
-    
-    const results = [];
-    for (let file of files) {
-        // Compress carousel images highly (max 300x300 for ribbon) to save DB payload size
-        const base64 = await resizeImageAndGetBase64(file, 300, 300);
-        results.push(base64);
+        previewContainer.innerHTML = '<span class="text-xs text-cyan-400">Processing ' + files.length + ' images...</span>';
+    await new Promise(r => setTimeout(r, 100));
+    const processed = await Promise.all(files.map(f => resizeImageAndGetBase64(f, 300, 300)));
+    for (let base64 of processed) {
+        if (pendingCarouselBase64s.length >= 26) break;
+        pendingCarouselBase64s.push(base64);
     }
     
-    pendingCarouselBase64s = results;
-    previewContainer.innerHTML = '';
-    
-    for (let base64 of pendingCarouselBase64s) {
-        const img = document.createElement('img');
-        img.src = base64;
-        img.className = "h-12 w-12 object-cover rounded border border-gray-600";
-        previewContainer.appendChild(img);
-    }
+    e.target.value = ''; // clear input
+    renderCarouselPreviews();
 });
 
 function resizeImageAndGetBase64(file, maxWidth, maxHeight) {
@@ -1004,12 +1008,6 @@ document.getElementById('admin-form').addEventListener('submit', (e) => {
     config.age = parseInt(document.getElementById('cfg-age').value);
     config.date = document.getElementById('cfg-date').value;
     config.time = document.getElementById('cfg-time').value;
-    config.originCity = document.getElementById('cfg-origin-city').value;
-    config.originLat = parseFloat(document.getElementById('cfg-origin-lat').value);
-    config.originLon = parseFloat(document.getElementById('cfg-origin-lon').value);
-    config.destCity = document.getElementById('cfg-dest-city').value;
-    config.destLat = parseFloat(document.getElementById('cfg-dest-lat').value);
-    config.destLon = parseFloat(document.getElementById('cfg-dest-lon').value);
     config.note = document.getElementById('cfg-note').value;
     config.previewMode = document.getElementById('cfg-preview').checked;
     
@@ -1018,9 +1016,7 @@ document.getElementById('admin-form').addEventListener('submit', (e) => {
         config.photoBase64 = hiddenBase64;
     }
     
-    if (pendingCarouselBase64s.length > 0) {
-        config.carouselPhotos = pendingCarouselBase64s;
-    }
+    config.carouselPhotos = pendingCarouselBase64s;
 
     saveConfig();
     
