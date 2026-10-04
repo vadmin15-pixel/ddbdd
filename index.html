@@ -695,7 +695,7 @@ const bgMusic = document.getElementById('bg-music');
 let hasInteracted = false;
 
 function tryPlayBgMusic() {
-    if (currentStage >= 2 && !hasInteracted && bgMusic) {
+    if (!hasInteracted && bgMusic) {
         bgMusic.volume = 0.25;
         bgMusic.play().then(() => {
             hasInteracted = true;
