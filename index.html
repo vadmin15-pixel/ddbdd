@@ -714,6 +714,29 @@ let tapCount = 0;
 let tapTimeout;
 document.addEventListener('DOMContentLoaded', () => {
     loadConfig();
+      const cakeSection = document.getElementById('stage34-container');
+      if (cakeSection) {
+          const observer = new IntersectionObserver((entries) => {
+              entries.forEach(entry => {
+                  if (entry.isIntersecting && currentStage < 4) {
+                      confetti({
+                          particleCount: 100,
+                          spread: 70,
+                          origin: { x: 0.1, y: 0.6 },
+                          colors: ['#22d3ee', '#a78bfa', '#ffffff', '#e879f9']
+                      });
+                      confetti({
+                          particleCount: 100,
+                          spread: 70,
+                          origin: { x: 0.9, y: 0.6 },
+                          colors: ['#22d3ee', '#a78bfa', '#ffffff', '#e879f9']
+                      });
+                  }
+              });
+          }, { threshold: 0.5 });
+          observer.observe(cakeSection);
+      }
+
     
     // Global keyboard shortcut for Admin
     document.addEventListener('keydown', (e) => {
