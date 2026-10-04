@@ -217,6 +217,7 @@ input:checked ~ #toggle-dot {
 
     <!-- Audio Elements (loaded via reliable public URLs) -->
     <audio id="chime-audio" src="https://assets.mixkit.co/active_storage/sfx/2215/2215-preview.mp3" preload="auto"></audio>
+    <audio id="bg-music" src="bg.mp3" loop preload="auto"></audio>
     <audio id="cheer-audio" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3" preload="auto"></audio>
     <audio id="blow-audio" src="https://assets.mixkit.co/active_storage/sfx/2997/2997-preview.mp3" preload="auto"></audio>
 
@@ -694,8 +695,8 @@ const bgMusic = document.getElementById('bg-music');
 let hasInteracted = false;
 
 function tryPlayBgMusic() {
-    if (!hasInteracted && bgMusic) {
-        bgMusic.volume = 0.25; // Quiet volume
+    if (currentStage >= 2 && !hasInteracted && bgMusic) {
+        bgMusic.volume = 0.25;
         bgMusic.play().then(() => {
             hasInteracted = true;
         }).catch(e => console.log("Music play blocked waiting for interaction"));
@@ -1167,7 +1168,7 @@ function triggerCurtainOpen() {
     
     chimeAudio.volume = 0.5;
     chimeAudio.play();
-    tryPlayBgMusic().catch(e => console.log("Audio play blocked by browser."));
+    tryPlayBgMusic();
 
     document.getElementById('countdown-card').classList.add('fade-out');
     
@@ -1247,7 +1248,7 @@ let analyser;
 let micStream;
 let blowAnimationId;
 let isCandlesBlown = false;
-let emojis = ['🎈', '🎉', '✨', '💖', '🎁', '🎂'];
+let emojis = ['*', '*', '*', '*', '*', '*'];
 
 function initStage3() {
     const container = document.getElementById('candles-container');
