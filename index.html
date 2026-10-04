@@ -955,12 +955,15 @@ if (removeRevealBtn) {
 document.getElementById('cfg-carousel-input').addEventListener('change', async function(e) {
     const files = Array.from(e.target.files);
     const previewContainer = document.getElementById('carousel-preview-container');
-        previewContainer.innerHTML = '<span class="text-xs text-cyan-400">Processing ' + files.length + ' images...</span>';
-    await new Promise(r => setTimeout(r, 100));
-    const processed = await Promise.all(files.map(f => resizeImageAndGetBase64(f, 300, 300)));
-    for (let base64 of processed) {
+            for (let i = 0; i < files.length; i++) {
         if (pendingCarouselBase64s.length >= 26) break;
-        pendingCarouselBase64s.push(base64);
+        previewContainer.innerHTML = '<span class="text-xs text-cyan-400">Processing ' + (i+1) + ' of ' + files.length + '...</span>';
+        await new Promise(r => setTimeout(r, 10)); // Yield to paint UI
+        
+        const base64 = await resizeImageAndGetBase64(files[i], 300, 300);
+        if (base64) {
+            pendingCarouselBase64s.push(base64);
+        }
     }
     
     e.target.value = ''; // clear input
@@ -969,10 +972,11 @@ document.getElementById('cfg-carousel-input').addEventListener('change', async f
 
 function resizeImageAndGetBase64(file, maxWidth, maxHeight) {
     return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
+        try {
             const img = new Image();
+            const objectUrl = URL.createObjectURL(file);
             img.onload = function() {
+                URL.revokeObjectURL(objectUrl);
                 const canvas = document.createElement('canvas');
                 let width = img.width;
                 let height = img.height;
@@ -991,12 +995,16 @@ function resizeImageAndGetBase64(file, maxWidth, maxHeight) {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                // Heavy compression (0.6) for Realtime DB stability
                 resolve(canvas.toDataURL('image/jpeg', 0.6));
             };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+            img.onerror = function() {
+                URL.revokeObjectURL(objectUrl);
+                resolve(null);
+            };
+            img.src = objectUrl;
+        } catch (e) {
+            resolve(null);
+        }
     });
 }
 
