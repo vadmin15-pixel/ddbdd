@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Happy Birthday!</title>
     <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-database-compat.js"></script>
@@ -281,7 +282,7 @@ input:checked ~ #toggle-dot {
                 <span id="hero-name" class="font-bold mt-1 text-amber-500">Sweety</span>
               </h1>
               <div class="mt-6 h-px w-16 bg-[#9C7A3F]"></div>
-              <p class="mt-6 max-w-sm text-base leading-relaxed text-[#4A4A42]" style="font-family: 'Work Sans', sans-serif;">
+              <p id="hero-message" class="mt-6 max-w-sm text-base leading-relaxed text-[#4A4A42]" style="font-family: 'Work Sans', sans-serif;">
                 Wishing you a day filled with love, laughter, and all the happiness your heart can hold. May this year bring you endless joy and unforgettable memories.
               </p>
             </div>
@@ -574,6 +575,11 @@ input:checked ~ #toggle-dot {
                             <p class="text-xs text-gray-500 mt-1">Timer ends at this local time.</p>
                         </div>
                     </div>
+                    <div class="mt-6 border-t border-gray-800 pt-6">
+                        <label class="block text-sm text-gray-400 mb-2">Carousel Page Message</label>
+                        <textarea id="cfg-hero-msg" rows="3" class="w-full bg-gray-950 border border-gray-700 rounded p-3 focus:border-cyan-500 focus:outline-none text-gray-300 resize-none" placeholder="Wishing you a day filled with love..."></textarea>
+                        <p class="text-xs text-gray-500 mt-1">This is the small text that appears on the left side of the screen while the photos spin.</p>
+                    </div>
                 </div>
 
                 <!-- Section 3: The Reveal & Carousel -->
@@ -583,7 +589,7 @@ input:checked ~ #toggle-dot {
                         <div>
                             <label class="block text-sm text-gray-400 mb-2">Final Reveal Photo (Single)</label>
                             <div class="border-2 border-dashed border-gray-700 rounded-xl p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer relative" id="photo-upload-zone">
-                                <input type="file" id="cfg-photo-input" accept="image/*" class="hidden">
+                                <input type="file" id="cfg-photo-input" accept="image/*, .heic" class="hidden">
                                 <div id="photo-preview-container" class="hidden flex-col items-center pointer-events-none">
                                     <img id="photo-preview" src="" class="h-24 w-24 object-cover rounded-lg mb-2 border border-gray-600">
                                     <span class="text-xs text-cyan-400">Click to change (Requires Passcode)</span>
@@ -601,7 +607,7 @@ input:checked ~ #toggle-dot {
                             <!-- NEW CAROUSEL PHOTOS -->
                             <div class="mt-6 border-t border-gray-800 pt-4">
                                 <label class="block text-sm text-gray-400 mb-2">Carousel Ribbon Photos (Up to 26)</label>
-                                <input type="file" id="cfg-carousel-input" multiple accept="image/*" class="w-full bg-gray-950 border border-gray-700 rounded p-2 text-sm text-gray-400">
+                                <input type="file" id="cfg-carousel-input" multiple accept="image/*, .heic" class="w-full bg-gray-950 border border-gray-700 rounded p-2 text-sm text-gray-400">
                                 <p class="text-xs text-gray-500 mt-1">Select up to 26 photos. They will be compressed and repeated along the 26-node ribbon automatically.</p>
                                 <div id="carousel-preview-container" class="flex gap-2 mt-3 overflow-x-auto"></div>
                             </div>
@@ -670,7 +676,8 @@ const DEFAULT_CONFIG = {
     destLon: 36.8219,
     photoBase64: "",
     note: "Happy Birthday! Even though we are thousands of miles apart, you are always in my heart. I hope you have the most amazing day ever. I love you so much!",
-    previewMode: false
+    previewMode: false,
+    heroMsg: "Wishing you a day filled with love, laughter, and all the happiness your heart can hold. May this year bring you endless joy and unforgettable memories."
 };
 
 // State
@@ -683,6 +690,22 @@ let pendingCarouselBase64s = [];
 
 // Audio
 const chimeAudio = document.getElementById('chime-audio');
+const bgMusic = document.getElementById('bg-music');
+let hasInteracted = false;
+
+function tryPlayBgMusic() {
+    if (!hasInteracted && bgMusic) {
+        bgMusic.volume = 0.25; // Quiet volume
+        bgMusic.play().then(() => {
+            hasInteracted = true;
+        }).catch(e => console.log("Music play blocked waiting for interaction"));
+    }
+}
+
+document.addEventListener('click', tryPlayBgMusic);
+document.addEventListener('touchstart', tryPlayBgMusic);
+document.addEventListener('scroll', tryPlayBgMusic);
+
 const cheerAudio = document.getElementById('cheer-audio');
 const blowAudio = document.getElementById('blow-audio');
 
@@ -829,6 +852,8 @@ function populateAdminForm() {
     document.getElementById('cfg-age').value = config.age;
     document.getElementById('cfg-date').value = config.date;
     document.getElementById('cfg-time').value = config.time;
+    document.getElementById('cfg-hero-msg').value = config.heroMsg || '';
+    document.getElementById('cfg-hero-msg').value = config.heroMsg || '';
     document.getElementById('cfg-note').value = config.note;
     
     // Toggle switch logic
@@ -970,40 +995,86 @@ document.getElementById('cfg-carousel-input').addEventListener('change', async f
     renderCarouselPreviews();
 });
 
-function resizeImageAndGetBase64(file, maxWidth, maxHeight) {
-    return new Promise((resolve) => {
+async function resizeImageAndGetBase64(file, maxWidth, maxHeight) {
+    let processFile = file;
+    const filename = file.name ? file.name.toLowerCase() : '';
+    if (filename.endsWith('.heic') || filename.endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif') {
         try {
-            const img = new Image();
-            const objectUrl = URL.createObjectURL(file);
-            img.onload = function() {
-                URL.revokeObjectURL(objectUrl);
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                if (width > height) {
-                    if (width > maxWidth) {
-                        height *= maxWidth / width;
-                        width = maxWidth;
+            if (typeof heic2any !== 'undefined') {
+                const convertedBlob = await heic2any({
+                    blob: file,
+                    toType: "image/jpeg",
+                    quality: 0.8
+                });
+                processFile = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+            }
+        } catch (e) {
+            console.error("HEIC conversion failed:", e);
+        }
+    }
+
+    return new Promise((resolve) => {
+        let isDone = false;
+        const timer = setTimeout(() => {
+            if (!isDone) {
+                isDone = true;
+                resolve(null);
+            }
+        }, 30000); // 30 seconds max for slow conversions
+        
+        try {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    if (isDone) return;
+                    isDone = true;
+                    clearTimeout(timer);
+                    try {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height *= maxWidth / width;
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width *= maxHeight / height;
+                                height = maxHeight;
+                            }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
+                    } catch(err) {
+                        resolve(null);
                     }
-                } else {
-                    if (height > maxHeight) {
-                        width *= maxHeight / height;
-                        height = maxHeight;
-                    }
-                }
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', 0.6));
+                };
+                img.onerror = function() {
+                    if (isDone) return;
+                    isDone = true;
+                    clearTimeout(timer);
+                    resolve(null);
+                };
+                img.src = e.target.result;
             };
-            img.onerror = function() {
-                URL.revokeObjectURL(objectUrl);
+            reader.onerror = function() {
+                if (isDone) return;
+                isDone = true;
+                clearTimeout(timer);
                 resolve(null);
             };
-            img.src = objectUrl;
-        } catch (e) {
-            resolve(null);
+            reader.readAsDataURL(processFile);
+        } catch(e) {
+            if (!isDone) {
+                isDone = true;
+                clearTimeout(timer);
+                resolve(null);
+            }
         }
     });
 }
@@ -1016,6 +1087,8 @@ document.getElementById('admin-form').addEventListener('submit', (e) => {
     config.age = parseInt(document.getElementById('cfg-age').value);
     config.date = document.getElementById('cfg-date').value;
     config.time = document.getElementById('cfg-time').value;
+    config.heroMsg = document.getElementById('cfg-hero-msg').value;
+    config.heroMsg = document.getElementById('cfg-hero-msg').value;
     config.note = document.getElementById('cfg-note').value;
     config.previewMode = document.getElementById('cfg-preview').checked;
     
@@ -1093,7 +1166,8 @@ function triggerCurtainOpen() {
     clearInterval(countdownInterval);
     
     chimeAudio.volume = 0.5;
-    chimeAudio.play().catch(e => console.log("Audio play blocked by browser."));
+    chimeAudio.play();
+    tryPlayBgMusic().catch(e => console.log("Audio play blocked by browser."));
 
     document.getElementById('countdown-card').classList.add('fade-out');
     
@@ -1118,6 +1192,8 @@ function triggerCurtainOpen() {
 function initStage2() {
     document.getElementById('hero-birthday-year').innerText = new Date(targetDate).getFullYear() || "2026";
     document.getElementById('hero-name').innerText = config.name;
+    if (config.heroMsg) document.getElementById('hero-message').innerText = config.heroMsg;
+    if (config.heroMsg) document.getElementById('hero-message').innerText = config.heroMsg;
     
     if (config.carouselPhotos && config.carouselPhotos.length > 0) {
         const carouselImages = document.querySelectorAll('.marquee-item img');
