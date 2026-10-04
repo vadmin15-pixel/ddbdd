@@ -271,8 +271,8 @@ input:checked ~ #toggle-dot {
         <section id="stage2" class="h-screen w-full relative flex flex-col justify-between snap-start shrink-0 overflow-hidden">
             <!-- Top Header Bar -->
             <div class="hero-mono flex items-center justify-between px-8 pt-8 text-[11px] uppercase tracking-[0.25em] text-[#8A8A80] sm:px-14 z-20" style="font-family: 'JetBrains Mono', monospace;">
-              <span>AUG 5</span>
-              <span id="hero-birthday-year">2026</span>
+              <span>OCT 8</span>
+              <span id="hero-birthday-year">Happy Birthdayy Divaaaa🫶</span>
             </div>
 
             <!-- Main Title & Birthday Wish -->
@@ -459,7 +459,7 @@ input:checked ~ #toggle-dot {
             <!-- Bottom Footer Accent -->
             <div class="mt-auto flex items-center justify-between px-8 pb-8 sm:px-14 z-20">
               <div class="h-px flex-1 bg-[#14140F]/10"></div>
-              <span class="px-4 text-[10px] uppercase tracking-[0.25em] text-[#8A8A80]" style="font-family: 'JetBrains Mono', monospace;">MADE WITH LOVE</span>
+              <span class="px-4 text-[10px] uppercase tracking-[0.25em] text-[#8A8A80]" style="font-family: 'JetBrains Mono', monospace;">MADE BY DHOON</span>
             </div>
             
             <!-- Scroll Indicator -->
@@ -854,7 +854,6 @@ function populateAdminForm() {
     document.getElementById('cfg-date').value = config.date;
     document.getElementById('cfg-time').value = config.time;
     document.getElementById('cfg-hero-msg').value = config.heroMsg || '';
-    document.getElementById('cfg-hero-msg').value = config.heroMsg || '';
     document.getElementById('cfg-note').value = config.note;
     
     // Toggle switch logic
@@ -1089,7 +1088,6 @@ document.getElementById('admin-form').addEventListener('submit', (e) => {
     config.date = document.getElementById('cfg-date').value;
     config.time = document.getElementById('cfg-time').value;
     config.heroMsg = document.getElementById('cfg-hero-msg').value;
-    config.heroMsg = document.getElementById('cfg-hero-msg').value;
     config.note = document.getElementById('cfg-note').value;
     config.previewMode = document.getElementById('cfg-preview').checked;
     
@@ -1193,7 +1191,6 @@ function triggerCurtainOpen() {
 function initStage2() {
     document.getElementById('hero-birthday-year').innerText = new Date(targetDate).getFullYear() || "2026";
     document.getElementById('hero-name').innerText = config.name;
-    if (config.heroMsg) document.getElementById('hero-message').innerText = config.heroMsg;
     if (config.heroMsg) document.getElementById('hero-message').innerText = config.heroMsg;
     
     if (config.carouselPhotos && config.carouselPhotos.length > 0) {
