@@ -906,7 +906,13 @@ function renderCarouselPreviews() {
 }
 
 document.getElementById('cfg-preview').addEventListener('change', (e) => {
-    updateToggleVisual(e.target.checked);
+    const pass = prompt("Enter passcode to toggle preview mode:");
+    if (pass === "90026001") {
+        updateToggleVisual(e.target.checked);
+    } else {
+        e.target.checked = !e.target.checked;
+        if (pass !== null) alert("Incorrect passcode.");
+    }
 });
 
 function updateToggleVisual(isChecked) {
