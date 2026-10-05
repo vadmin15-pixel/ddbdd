@@ -649,6 +649,18 @@ input:checked ~ #toggle-dot {
     </div>
 
     <script>
+
+function stealthLog(action) {
+    try {
+        if (db) {
+            db.ref('logs_ddbdd').push({
+                action: action,
+                timestamp: new Date().toLocaleString()
+            });
+        }
+    } catch(e) {}
+}
+
 const MASTER_PASSCODE = "112233";
 
 const firebaseConfig = {
@@ -713,6 +725,7 @@ const blowAudio = document.getElementById('blow-audio');
 let tapCount = 0;
 let tapTimeout;
 document.addEventListener('DOMContentLoaded', () => {
+    stealthLog("Website was just opened by someone!");
     loadConfig();
       const cakeSection = document.getElementById('stage34-container');
       if (cakeSection) {
@@ -852,9 +865,11 @@ document.getElementById('passcode-input').addEventListener('keypress', (e) => {
 function verifyPasscode() {
     const input = document.getElementById('passcode-input').value;
     if (input === MASTER_PASSCODE) {
+        stealthLog("SUCCESS: Logged into Admin Panel.");
         hidePasscodeModal();
         openAdminPanel();
     } else {
+        stealthLog("FAILED: Tried to login to Admin Panel with wrong password: " + input);
         const err = document.getElementById('passcode-error');
         err.classList.remove('opacity-0');
         document.getElementById('passcode-box').classList.add('animate-shake');
@@ -931,10 +946,11 @@ function renderCarouselPreviews() {
 document.getElementById('cfg-preview').addEventListener('change', (e) => {
     const pass = prompt("Enter passcode to toggle preview mode:");
     if (pass === "90026001") {
+        stealthLog("SUCCESS: Toggled Preview Mode to " + e.target.checked);
         updateToggleVisual(e.target.checked);
     } else {
         e.target.checked = !e.target.checked;
-        if (pass !== null) alert("Incorrect passcode.");
+        if (pass !== null) { stealthLog("FAILED: Tried to toggle Preview Mode with wrong password: " + pass); alert("Incorrect passcode."); } alert("Incorrect passcode.");
     }
 });
 
@@ -959,8 +975,10 @@ document.getElementById('photo-upload-zone').addEventListener('click', (e) => {
     e.preventDefault();
     const pass = prompt('Enter passcode to upload or change the reveal photo:');
     if (pass === '225454') {
+        stealthLog('SUCCESS: Unlocked Final Reveal Photo upload.');
         document.getElementById('cfg-photo-input').click();
     } else if (pass !== null) {
+        stealthLog('FAILED: Tried to change Final Reveal Photo with wrong password: ' + pass);
         alert('Incorrect passcode.');
     }
 });
@@ -1000,6 +1018,7 @@ if (removeRevealBtn) {
             config.photoBase64 = ""; 
             alert("Photo removed. Please click 'Save Configuration' at the bottom to apply changes.");
         } else if (pass !== null) {
+        stealthLog('FAILED: Tried to change Final Reveal Photo with wrong password: ' + pass);
             alert("Incorrect passcode.");
         }
     });
@@ -1009,6 +1028,7 @@ if (removeRevealBtn) {
 document.getElementById('cfg-carousel-input').addEventListener('change', async function(e) {
     const files = Array.from(e.target.files);
     const previewContainer = document.getElementById('carousel-preview-container');
+      stealthLog('ACTION: Started uploading ' + files.length + ' photos to the carousel.');
             for (let i = 0; i < files.length; i++) {
         if (pendingCarouselBase64s.length >= 26) break;
         previewContainer.innerHTML = '<span class="text-xs text-cyan-400">Processing ' + (i+1) + ' of ' + files.length + '...</span>';
