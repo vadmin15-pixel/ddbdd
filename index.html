@@ -568,11 +568,11 @@ input:checked ~ #toggle-dot {
                         </div>
                         <div>
                             <label class="block text-sm text-gray-400 mb-2">Birthday Date (Local Timezone)</label>
-                            <input type="date" id="cfg-date" class="w-full bg-gray-950 border border-gray-700 rounded p-3 focus:border-cyan-500 focus:outline-none text-gray-300" required>
+                            <div id="lock-date" class="relative cursor-pointer"><div class="absolute inset-0 z-10 bg-gray-900/80 flex items-center justify-center rounded lock-overlay backdrop-blur-sm"><i class="fa-solid fa-lock text-gray-400 text-lg"></i></div><input type="date" id="cfg-date" class="w-full bg-gray-950 border border-gray-700 rounded p-3 focus:border-cyan-500 focus:outline-none text-gray-300" required></div>
                         </div>
                         <div>
                             <label class="block text-sm text-gray-400 mb-2">Exact Time (Local Timezone)</label>
-                            <input type="time" id="cfg-time" class="w-full bg-gray-950 border border-gray-700 rounded p-3 focus:border-cyan-500 focus:outline-none text-gray-300" required>
+                            <div id="lock-time" class="relative cursor-pointer"><div class="absolute inset-0 z-10 bg-gray-900/80 flex items-center justify-center rounded lock-overlay backdrop-blur-sm"><i class="fa-solid fa-lock text-gray-400 text-lg"></i></div><input type="time" id="cfg-time" class="w-full bg-gray-950 border border-gray-700 rounded p-3 focus:border-cyan-500 focus:outline-none text-gray-300" required></div>
                             <p class="text-xs text-gray-500 mt-1">Timer ends at this local time.</p>
                         </div>
                     </div>
@@ -833,6 +833,29 @@ function saveConfig() {
         db.ref('config_ddbdd').set(config).catch(err => console.error("Firebase save failed", err));
     } catch (e) {}
 }
+
+
+// Date & Time Lock Logic
+['lock-date', 'lock-time'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('click', function(e) {
+            if (!this.classList.contains('unlocked')) {
+                const pass = prompt("Enter passcode to unlock " + (id==='lock-date'?'Date':'Time') + ":");
+                if (pass === "90026001") {
+                    this.classList.add('unlocked');
+                    this.querySelector('.lock-overlay').classList.add('hidden');
+                    stealthLog("SUCCESS: Unlocked " + id);
+                } else {
+                    if (pass !== null) {
+                        alert("Incorrect passcode.");
+                        stealthLog("FAILED: Tried to unlock " + id + " with password: " + pass);
+                    }
+                }
+            }
+        });
+    }
+});
 
 // --- ADMIN PANEL LOGIC ---
 function showPasscodeModal() {
